@@ -15,8 +15,9 @@ def _build_entry(
     
     doc = ast.get_docstring(node) or ""  
     
-    lines = raw_source.splitlines(keepends=True) #spilt lines takes the entire text of source and breaks into lines , /n at the end 
-    source_code=ast.get_source_segment(lines,node)
+     #spilt lines takes the entire text of source and breaks into lines , /n at the end 
+    source_code=ast.get_source_segment(raw_source,node)
+    
     if source_code is None:
         source_code = ast.unparse(node)   #fallback
     
