@@ -14,6 +14,7 @@ def _build_entry(
 ) -> dict[str, Any]:
     
     doc = ast.get_docstring(node) or ""  
+    #get_source_segment cuts the code of just this function/class from the full file
     source_code=ast.get_source_segment(raw_source,node)
     if source_code is None:
         source_code = ast.unparse(node)   #fallback
@@ -40,6 +41,7 @@ def _build_entry(
 def parse_file(file_path: Path) -> list[dict[str, Any]]:
     try:
         raw = file_path.read_text(encoding="utf-8")
+        #utf-8 is standard character encoding
         tree = ast.parse(raw)
     except SyntaxError:
         return []
@@ -67,6 +69,7 @@ and depending on what it is , it added it to results '''
     
           
 def _should_skip(path: Path, patterns: list[str] | None) -> bool:
+    #checks if any part of path (venv, __pycache__ etc) is in the ignore list
     if not patterns:
         return False
     for part in path.parts:
@@ -79,12 +82,14 @@ def scan_directory(
     root: str | Path,
     ignore_patterns: list[str] | None = None,
 ) -> list[dict[str, Any]]:
+    #converts root to absolute path
     root_path = Path(root).resolve()
     entries = []
-
+    #rglob = recursive glob , finds all .py files including subdirectories
     for py_file in sorted(root_path.rglob("*.py")):
         if _should_skip(py_file, ignore_patterns):
             continue
+        #extend adds items individually , append would add the whole list as one element
         entries.extend(parse_file(py_file))
 
     return entries
