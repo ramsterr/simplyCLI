@@ -1,20 +1,22 @@
-import pickle
+import pickle #saves and loads metadata dicts
 from pathlib import Path
 import numpy as np
 
 
+
 class VectorStore:
-    def __init__(self, base_dir: str = ".simply_index") -> None:
-        self.base_dir = Path(base_dir).resolve()
+    def __init__(self, base_dir: str = ".simply_index") -> None: #storing data in .simply_index if no else path is provided
+        self.base_dir = Path(base_dir).resolve() #wraps the path string in a path object
+        #i have added this so that i can get cross-platform file operations like /,mkdir , exists
 
         if not self.base_dir.exists():
             old = Path("index_data").resolve()
             if old.exists():
                 old.rename(self.base_dir)
-                print(f"📦 Migrated index_data → {self.base_dir.name}")
+                print(f"Migrated index_data -> {self.base_dir.name}")
 
-        self.base_dir.mkdir(parents=True, exist_ok=True)
-        self.vectors: np.ndarray | None = None
+        self.base_dir.mkdir(parents=True, exist_ok=True) #parents=True creates missing parent folders
+        self.vectors: np.ndarray | None = None #array gets created when i call add() or load()
         self.entries: list[dict] = []
 
     def add(self, vectors: np.ndarray, entries: list[dict]) -> None:
@@ -39,11 +41,11 @@ class VectorStore:
         epath = self.base_dir / "entries.pkl"
         if not vpath.exists():
             raise FileNotFoundError(
-                f"Index not found at {vpath} — run `index` first"
+                f"Index not found at {vpath} -- run `index` first"
             )
         if not epath.exists():
             raise FileNotFoundError(
-                f"Entries not found at {epath} — index is corrupt, re-run `index`"
+                f"Entries not found at {epath} -- index is corrupt, re-run `index`"
             )
         self.vectors = np.load(vpath)
         with open(epath, "rb") as f:
@@ -53,12 +55,13 @@ class VectorStore:
         self, query_vector: np.ndarray, top_k: int = 3
     ) -> list[dict]:
         if self.vectors is None:
-            raise ValueError("Index empty — call add() then save(), or load() first.")
+            raise ValueError("Index empty -- call add() then save(), or load() first.")
         q = np.asarray(query_vector, dtype=np.float32)
         if q.shape != (self.vectors.shape[1],):
             raise ValueError(
                 f"query shape {q.shape} does not match vector dimension {self.vectors.shape[1]}"
             )
+        #vectorized cosine similarity: (vectors @ query) / norms
         q_norm = q / np.linalg.norm(q)
         v_norms = self.vectors / np.linalg.norm(self.vectors, axis=1, keepdims=True)
         sims = v_norms @ q_norm
